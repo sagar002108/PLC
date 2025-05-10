@@ -1,85 +1,199 @@
 from enum import Enum
 from abc import ABC, abstractmethod
-
-class Statement:
-    """What is statement?
-    In this calculator project, a statement is each line of math expression.
-    In this case, it will consit of tree of math expression
-    """
-    def __init__(self) -> None:
-        root_node
-        
+from typing import List, Optional
+from components.memory import Memory  # Add this import
 
 class Operations(Enum):
-    PLUS:int=0
-    MINUS:int=1
-    TIMES:int=2
-    DIVIDE:int=3
+    PLUS = 0
+    MINUS = 1
+    TIMES = 2
+    DIVIDE = 3
+    EQ = 4
+    NEQ = 5
+    CONCAT = 6
 
-class Expression(ABC): 
+class Expression(ABC):
     @abstractmethod
-    def __init__(self) -> None:
-        self.signature:str = ""
-        self.value:int = None
+    def __init__(self):
+        self.value = None
+        self.signature: str = ""
+
+    @abstractmethod
+    def run(self, memory) -> None:
         pass
 
-    @abstractmethod
-    def run(self) -> None:
+class ExpressionNumber(Expression):
+    def __init__(self, number: int):
+        self.value = number
+        self.signature = str(number)
+
+    def run(self, memory) -> None:
         pass
 
-class Expression_math(Expression):
-    def __init__(self, operation:Operations, parameter1:Expression, parameter2:Expression):
-        # Init attribute
-        self.operation:Operations = operation
-        self.parameter1:Expression = parameter1
-        self.parameter2:Expression = parameter2
-        self.signature:str = ""
-        self.value:int = None
-        # Checking Logic
-        assert operation in Operations
+    def __repr__(self) -> str:
+        return f"Number:{self.value}"
 
-        # Create a children
-        self.children = [self.parameter1, self.parameter2]
-        
-    def run(self) -> None:
-        # evaluate child first
+class ExpressionFloat(Expression):
+    def __init__(self, number: float):
+        self.value = number
+        self.signature = str(number)
+
+    def run(self, memory) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"Float:{self.value}"
+
+class ExpressionString(Expression):
+    def __init__(self, string: str):
+        self.value = string
+        self.signature = f'"{string}"'
+
+    def run(self, memory) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"String:{self.signature}"
+
+class ExpressionBoolean(Expression):
+    def __init__(self, value: bool):
+        self.value = value
+        self.signature = str(value).lower()
+
+    def run(self, memory) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"Boolean:{self.value}"
+
+class ExpressionMath(Expression):
+    def __init__(self, operation: Operations, parameter1: Expression, parameter2: Expression):
+        self.operation = operation
+        self.parameter1 = parameter1
+        self.parameter2 = parameter2
+        self.signature = ""
+        self.value = None
+        self.children = [parameter1, parameter2]
+
+    def run(self, memory) -> None:
         for child in self.children:
-            child.run()
-            # print(child)
+            child.run(memory)
 
-        # print(f"Calculating: {self.operation.name=} {self.parameter1=} {self.parameter2=}")
-        if(self.operation == Operations.PLUS):
-            self.value = self.parameter1.value + self.parameter2.value
-        elif(self.operation == Operations.MINUS):
+        if self.operation == Operations.PLUS:
+            if isinstance(self.parameter1.value, str) and isinstance(self.parameter2.value, str):
+                self.value = self.parameter1.value + self.parameter2.value
+            else:
+                self.value = self.parameter1.value + self.parameter2.value
+        elif self.operation == Operations.MINUS:
             self.value = self.parameter1.value - self.parameter2.value
-        elif(self.operation == Operations.TIMES):
+        elif self.operation == Operations.TIMES:
             self.value = self.parameter1.value * self.parameter2.value
-        elif(self.operation == Operations.DIVIDE):
+        elif self.operation == Operations.DIVIDE:
             self.value = self.parameter1.value / self.parameter2.value
-        else:
-            raise ValueError(f"{self.operation=} is not support. Please use class Statement.Operations. Actually, this should not happen.")
-        
-        self.signature = f"Expression: {self.operation.name} {self.parameter1.value} {self.parameter2.value}"
-        print(self)
+        elif self.operation == Operations.EQ:
+            self.value = self.parameter1.value == self.parameter2.value
+        elif self.operation == Operations.NEQ:
+            self.value = self.parameter1.value != self.parameter2.value
+        self.signature = f"{self.operation.name} {self.parameter1.value} {self.parameter2.value}"
 
     def __repr__(self) -> str:
         return self.signature
 
-class Expression_number(Expression):
-    def __init__(self, number:int) -> None:
-        self.value:int = number
-        self.signature:str= str(number)
-        
-    def run(self) -> None:
-        print(self)
+class ExpressionVariable(Expression):
+    def __init__(self, name: str):
+        self.name = name
+        self.signature = name
+        self.value = None
+
+    def run(self, memory) -> None:
+        self.value = memory.get(self.name)
 
     def __repr__(self) -> str:
-        return f"Expression_number:{self.signature}"
+        return f"Variable:{self.name}={self.value}"
 
-if __name__ == "__main__":
-    number1 = Expression_number(number=8)
-    number2 = Expression_number(number=9)
-    expr = Expression_math(Operations.MINUS, parameter1=number1, parameter2=number2)
-    expr.run()
-    # print(expr.hshow())
-    print(expr.value)
+class Statement(ABC):
+    @abstractmethod
+    def run(self, memory) -> None:
+        pass
+
+class AssignmentStatement(Statement):
+    def __init__(self, variable: str, expression: Expression):
+        self.variable = variable
+        self.expression = expression
+
+    def run(self, memory) -> None:
+        self.expression.run(memory)
+        memory.set(self.variable, self.expression.value, type(self.expression.value))
+
+class IfStatement(Statement):
+    def __init__(self, condition: Expression, then_block: List[Statement], else_block: List[Statement]):
+        self.condition = condition
+        self.then_block = then_block
+        self.else_block = else_block
+
+    def run(self, memory) -> None:
+        self.condition.run(memory)
+        if self.condition.value:
+            for stmt in self.then_block:
+                stmt.run(memory)
+        else:
+            for stmt in self.else_block:
+                stmt.run(memory)
+
+class WhileStatement(Statement):
+    def __init__(self, condition: Expression, body: List[Statement]):
+        self.condition = condition
+        self.body = body
+
+    def run(self, memory) -> None:
+        while True:
+            self.condition.run(memory)
+            if not self.condition.value:
+                break
+            for stmt in self.body:
+                stmt.run(memory)
+
+class FunctionDefinition(Statement):
+    def __init__(self, name: str, params: List[str], body: List[Statement]):
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def run(self, memory) -> None:
+        memory.set(self.name, self, FunctionDefinition)
+
+class FunctionCall(Expression):
+    def __init__(self, name: str, args: List[Expression]):
+        self.name = name
+        self.args = args
+        self.value = None
+        self.signature = f"{name}({','.join(str(arg) for arg in args)})"
+
+    def run(self, memory) -> None:
+        func = memory.get(self.name)
+        local_memory = Memory()  # This line requires Memory to be imported
+        for param, arg in zip(func.params, self.args):
+            arg.run(memory)
+            local_memory.set(param, arg.value, type(arg.value))
+        for stmt in func.body:
+            stmt.run(local_memory)
+        self.value = local_memory.get("return") if "return" in local_memory.memory else None
+
+    def __repr__(self) -> str:
+        return f"FunctionCall:{self.signature}"
+
+class PrintStatement(Statement):
+    def __init__(self, expression: Expression):
+        self.expression = expression
+
+    def run(self, memory) -> None:
+        self.expression.run(memory)
+        print(self.expression.value)
+
+class ReturnStatement(Statement):
+    def __init__(self, expression: Expression):
+        self.expression = expression
+
+    def run(self, memory) -> None:
+        self.expression.run(memory)
+        memory.set("return", self.expression.value, type(self.expression.value))

@@ -1,119 +1,143 @@
+from sly import Parser
 from components.lexica import MyLexer
 from components.memory import Memory
-from sly import Parser
+from components.ast.statement import (
+    Operations, ExpressionNumber, ExpressionFloat, ExpressionString, ExpressionBoolean,
+    ExpressionMath, ExpressionVariable, AssignmentStatement, IfStatement, WhileStatement,
+    FunctionDefinition, FunctionCall, PrintStatement, ReturnStatement
+)
 
-class MyParser(Parser):
+class ASTParser(Parser):
     debugfile = 'parser.out'
-    start = 'statement'
-    # Get the token list from the lexer (required)
+    start = 'program'
     tokens = MyLexer.tokens
     precedence = (
-        ('left', "+", MINUS),
+        ('left', EQ, NEQ),
+        ('left', '+', MINUS),
         ('left', TIMES, DIVIDE),
-        ('right', UMINUS),
-        )
+    )
 
     def __init__(self):
-        self.memory:Memory = Memory()
+        self.memory = Memory()
+
+    @_('statements')
+    def program(self, p) -> list:
+        return p.statements
+
+    @_('statement statements')
+    def statements(self, p) -> list:
+        return [p.statement] + p.statements
+
+    @_('')
+    def statements(self, p) -> list:
+        return []
 
     @_('NAME ASSIGN expr')
     def statement(self, p):
-        var_name = p.NAME
-        value = p.expr
-        self.memory.set(variable_name=var_name,value=value, data_type=type(value))
-        # Note that I did not return anything
+        return AssignmentStatement(p.NAME, p.expr)
 
-    @_('expr')
-    # S -> E
-    def statement(self, p) -> int:
-        return p.expr
+    @_('IF expr THEN statements ELSE statements END')
+    def statement(self, p):
+        return IfStatement(p.expr, p.statements0, p.statements1)
 
-    # The example with literals
+    @_('WHILE expr DO statements END')
+    def statement(self, p):
+        return WhileStatement(p.expr, p.statements)
+
+    @_('FUN NAME LPAREN params RPAREN statements END')
+    def statement(self, p):
+        return FunctionDefinition(p.NAME, p.params, p.statements)
+
+    @_('PRINT expr')
+    def statement(self, p):
+        return PrintStatement(p.expr)
+
+    @_('RETURN expr')
+    def statement(self, p):
+        return ReturnStatement(p.expr)
+
+    @_('NAME')
+    def param(self, p) -> str:
+        return p.NAME
+
+    @_('param "," params')
+    def params(self, p) -> list:
+        return [p.param] + p.params
+
+    @_('param')
+    def params(self, p) -> list:
+        return [p.param]
+
+    @_('')
+    def params(self, p) -> list:
+        return []
+
     @_('expr "+" expr')
-    # E -> E + E
     def expr(self, p):
-        # You can refer to the token 2 ways
-        # Way1: using array
-        print(p[0], p[1], p[2])
-        # Way2: using symbol name. 
-        # Here, if you have more than one symbols with the same name
-        # You have to indiciate the number at the end.
-        return p.expr0 + p.expr1
+        return ExpressionMath(Operations.PLUS, p.expr0, p.expr1)
 
-    # The example with normal token
     @_('expr MINUS expr')
     def expr(self, p):
-        print(p[0], p[1], p[2])
-        return p.expr0 - p.expr1
+        return ExpressionMath(Operations.MINUS, p.expr0, p.expr1)
 
     @_('expr TIMES expr')
     def expr(self, p):
-        return p.expr0 * p.expr1
+        return ExpressionMath(Operations.TIMES, p.expr0, p.expr1)
 
     @_('expr DIVIDE expr')
     def expr(self, p):
-        return p.expr0 / p.expr1
+        return ExpressionMath(Operations.DIVIDE, p.expr0, p.expr1)
 
-    # https://sly.readthedocs.io/en/latest/sly.html#dealing-with-ambiguous-grammars
-    # `%prec UMINUS` is the way to override the `precedence` of MINUS to UMINUS.
-    @_('MINUS expr %prec UMINUS')
+    @_('expr EQ expr')
     def expr(self, p):
-        return -p.expr
+        return ExpressionMath(Operations.EQ, p.expr0, p.expr1)
 
-    @_('LPAREN expr RPAREN')
+    @_('expr NEQ expr')
     def expr(self, p):
-        return p.expr
+        return ExpressionMath(Operations.NEQ, p.expr0, p.expr1)
 
     @_('NUMBER')
     def expr(self, p):
-        return int(p.NUMBER)
+        return ExpressionNumber(p.NUMBER)
 
+    @_('FLOAT')
+    def expr(self, p):
+        return ExpressionFloat(p.FLOAT)
 
-from components.ast.statement import Expression, Expression_math, Expression_number, Operations
-class ASTParser(Parser):
-    debugfile = 'parser.out'
-    start = 'statement'
-    # Get the token list from the lexer (required)
-    tokens = MyLexer.tokens
-    precedence = (
-        ('left', "+", MINUS),
-        # ('left', TIMES, DIVIDE),
-        # ('right', UMINUS),
-        )
+    @_('STRING')
+    def expr(self, p):
+        return ExpressionString(p.STRING)
+
+    @_('TRUE')
+    def expr(self, p):
+        return ExpressionBoolean(True)
+
+    @_('FALSE')
+    def expr(self, p):
+        return ExpressionBoolean(False)
+
+    @_('NAME')
+    def expr(self, p):
+        return ExpressionVariable(p.NAME)
+
+    @_('NAME LPAREN args RPAREN')
+    def expr(self, p):
+        return FunctionCall(p.NAME, p.args)
+
+    @_('expr "," args')
+    def args(self, p) -> list:
+        return [p.expr] + p.args
 
     @_('expr')
-    def statement(self, p) -> int:
-        p.expr.run()
-        return p.expr.value
+    def args(self, p) -> list:
+        return [p.expr]
 
-    @_('expr "+" expr')
-    def expr(self, p) -> Expression:
-        parameter1 = p.expr0
-        parameter2 = p.expr1
-        expr = Expression_math(operation=Operations.PLUS, parameter1=parameter1, parameter2=parameter2)
-        return expr
-    
-    @_('expr MINUS expr')
-    def expr(self, p) -> Expression:
-        parameter1 = p.expr0
-        parameter2 = p.expr1
-        expr = Expression_math(operation=Operations.MINUS, parameter1=parameter1, parameter2=parameter2)
-        return expr
+    @_('')
+    def args(self, p) -> list:
+        return []
 
-    @_('NUMBER')
-    def expr(self, p) -> Expression:
-        return Expression_number(number=p.NUMBER)
-        
-        
-
-        
-if __name__ == "__main__":
-    lexer = MyLexer()
-    # parser = MyParser()
-    text = "9 + 2 + 3"
-    memory = Memory()
-    parser = ASTParser()
-    # text = "1 + 2 + 3"
-    result = parser.parse(lexer.tokenize(text))
-    print(result)
-    # print(memory)
+    def error(self, p):
+        if p:
+            print(f"DEBUG: Syntax error at token {p.type} (value: {p.value}) at line {p.lineno}")
+        else:
+            print("DEBUG: Syntax error at EOF")

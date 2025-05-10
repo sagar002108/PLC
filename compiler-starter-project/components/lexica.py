@@ -2,66 +2,69 @@ from sly import Lexer
 import sly
 
 class MyLexer(Lexer):
-    """
-    MyLexer is a class that inherits from sly.Lexer
-    It is used to tokenize the input string.
-    ref: https://sly.readthedocs.io/en/latest/sly.html#sly-sly-lex-yacc
-    
+    tokens = {
+        ASSIGN, NAME, NUMBER, FLOAT, STRING, TRUE, FALSE,
+        EQ, NEQ, MINUS, DIVIDE, TIMES, LPAREN, RPAREN,
+        IF, THEN, ELSE, WHILE, DO, END, FUN, RETURN, PRINT
+    }
+    literals = { '+', ',' }
 
-    Python regEX: https://www.w3schools.com/python/python_regex.asp
-    """
-
-    ### `tokens` ###
-    # set `tokens` so it can be used in the parser.
-    # This must be here and all Capitalized. 
-    # Please, ignore IDE warning.
-    tokens = { ASSIGN, NAME, NUMBER, MINUS, DIVIDE, TIMES, LPAREN, RPAREN}
-    
-    # https://sly.readthedocs.io/en/latest/sly.html#literal-characters
-    literals = { '+' }
-    
-    ### matching rule ###
-    # The matching work from top to bottom
-    # At least, all toekns must be defined here
-
-    # Ignore spaces and tabs 
     ignore = ' \t'
+    ignore_newline = r'\n+'
 
-    ### EX1: simply define with regEX ###
+    IF = r'if'
+    THEN = r'then'
+    ELSE = r'else'
+    WHILE = r'while'
+    DO = r'do'
+    END = r'end'
+    FUN = r'fun'
+    RETURN = r'return'
+    PRINT = r'print'
+    TRUE = r'true'
+    FALSE = r'false'
+
+    # Ensure EQ and NEQ are matched before ASSIGN
+    EQ = r'=='
+    NEQ = r'!='
+    ASSIGN = r'='  # This should match only a single =, after EQ/NEQ
+
+    MINUS = r'-'
+    TIMES = r'\*'
+    DIVIDE = r'/'
+    LPAREN = r'\('
+    RPAREN = r'\)'
+
     NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    ### EX2: Define as a function ###
-    @_(r'\d+')
-    def NUMBER(self, token):
-        # Note that this function set parse token.value to integer
-        token.value = int(token.value)
-        # Extra print for debug
-        print(f"====This print from NUMBER function: {token.type=} {token.value=} {type(token.value)=}")
+
+    @_(r'\d+\.\d+')
+    def FLOAT(self, token):
+        token.value = float(token.value)
         return token
 
-    # Try uncomment this and run to see the differences between `token` and `literal`
-    ASSIGN  = r'\='
-    # PLUS    = r'\+'
-    MINUS   = r'-'
-    TIMES   = r'\*'
-    DIVIDE  = r'/'
-    LPAREN  = r'\('
-    RPAREN  = r'\)'
+    @_(r'\d+')
+    def NUMBER(self, token):
+        token.value = int(token.value)
+        return token
 
-    # Extra action for newlines
-    @_(r'\n+')
+    @_(r'"[^"]*"')
+    def STRING(self, token):
+        token.value = token.value[1:-1]
+        return token
+
     def ignore_newline(self, t):
-        # https://sly.readthedocs.io/en/latest/sly.html#line-numbers-and-position-tracking
         self.lineno += t.value.count('\n')
 
     def error(self, t):
-        self.index += 1
         print(f"ERROR: Illegal character '{t.value[0]}' at line {self.lineno}")
+        self.index += 1
 
-if __name__ == '__main__':
-    # Write a simple test that only run when you execute this file
-    string_input:str = "x1 + 1as! * ()"
-    lex:Lexer = MyLexer()
-    # assign type to `token`
-    token: sly.lex.Token
-    for token in lex.tokenize(string_input):
-        print(token)
+    def tokenize(self, text, lineno=1, index=0):
+        tokens = super().tokenize(text, lineno, index)
+        token_types = []
+        tokens_list = []
+        for token in tokens:
+            token_types.append(token.type)
+            tokens_list.append(token)
+        print(f"DEBUG: Tokens generated: {token_types}")
+        return iter(tokens_list)
