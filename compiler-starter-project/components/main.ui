@@ -13,8 +13,68 @@
   <property name="windowTitle">
    <string>Programming Language Calculator</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QMainWindow {
+        background-color: #2E2E2E;
+    }
+    QTextEdit {
+        background-color: #3C3F41;
+        color: #FFFFFF;
+        border: 1px solid #555555;
+        border-radius: 5px;
+        padding: 5px;
+        font-family: 'Arial';
+        font-size: 14px;
+    }
+    QPushButton {
+        background-color: #6200EA;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: 'Arial';
+        font-size: 14px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #7C4DFF;
+    }
+    QPushButton:pressed {
+        background-color: #4A00B0;
+    }
+    QLabel {
+        color: #FFFFFF;
+        font-family: 'Arial';
+        font-size: 16px;
+        font-weight: bold;
+    }
+    QLCDNumber {
+        background-color: #3C3F41;
+        color: #00FF00;
+        border: 1px solid #555555;
+        border-radius: 5px;
+        padding: 5px;
+    }
+   </string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>10</number>
+    </property>
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="topMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
+    <property name="bottomMargin">
+     <number>20</number>
+    </property>
     <item>
      <widget class="QLabel" name="input_label">
       <property name="text">
@@ -27,182 +87,24 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>150</height>
+        <height>200</height>
        </size>
       </property>
      </widget>
     </item>
     <item>
-     <layout class="QGridLayout" name="button_layout">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="button_1">
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="button_2">
-        <property name="text">
-         <string>2</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="button_plus">
-        <property name="text">
-         <string>+</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QPushButton" name="button_minus">
-        <property name="text">
-         <string>-</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4">
-       <widget class="QPushButton" name="button_times">
-        <property name="text">
-         <string>*</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="button_divide">
-        <property name="text">
-         <string>/</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="button_eq">
-        <property name="text">
-         <string>==</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="button_neq">
-        <property name="text">
-         <string>!=</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="button_assign">
-        <property name="text">
-         <string>=</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="button_lparen">
-        <property name="text">
-         <string>(</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <widget class="QPushButton" name="button_rparen">
-        <property name="text">
-         <string>)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="button_quote">
-        <property name="text">
-         <string>"</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="button_true">
-        <property name="text">
-         <string>true</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QPushButton" name="button_false">
-        <property name="text">
-         <string>false</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="button_if">
-        <property name="text">
-         <string>if</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="button_then">
-        <property name="text">
-         <string>then</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="4">
-       <widget class="QPushButton" name="button_else">
-        <property name="text">
-         <string>else</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="5">
-       <widget class="QPushButton" name="button_end">
-        <property name="text">
-         <string>end</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="button_while">
-        <property name="text">
-         <string>while</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="button_do">
-        <property name="text">
-         <string>do</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="button_fun">
-        <property name="text">
-         <string>fun</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="button_return">
-        <property name="text">
-         <string>return</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="4">
-       <widget class="QPushButton" name="button_print">
-        <property name="text">
-         <string>print</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="5">
+     <layout class="QHBoxLayout" name="button_layout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
        <widget class="QPushButton" name="button_clear">
         <property name="text">
          <string>Clear</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="0" columnspan="6">
+      <item>
        <widget class="QPushButton" name="button_equal">
         <property name="text">
          <string>Execute</string>
@@ -223,7 +125,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>150</height>
+        <height>200</height>
        </size>
       </property>
       <property name="readOnly">

@@ -1,7 +1,7 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from components.memory import Memory  # Add this import
+from components.memory import Memory
 
 class Operations(Enum):
     PLUS = 0
@@ -76,25 +76,36 @@ class ExpressionMath(Expression):
         self.children = [parameter1, parameter2]
 
     def run(self, memory) -> None:
-        for child in self.children:
-            child.run(memory)
+        try:
+            # Run children to compute their values
+            for child in self.children:
+                child.run(memory)
+                if child.value is None:
+                    raise ValueError(f"Child expression {child} has no value after run")
 
-        if self.operation == Operations.PLUS:
-            if isinstance(self.parameter1.value, str) and isinstance(self.parameter2.value, str):
-                self.value = self.parameter1.value + self.parameter2.value
-            else:
-                self.value = self.parameter1.value + self.parameter2.value
-        elif self.operation == Operations.MINUS:
-            self.value = self.parameter1.value - self.parameter2.value
-        elif self.operation == Operations.TIMES:
-            self.value = self.parameter1.value * self.parameter2.value
-        elif self.operation == Operations.DIVIDE:
-            self.value = self.parameter1.value / self.parameter2.value
-        elif self.operation == Operations.EQ:
-            self.value = self.parameter1.value == self.parameter2.value
-        elif self.operation == Operations.NEQ:
-            self.value = self.parameter1.value != self.parameter2.value
-        self.signature = f"{self.operation.name} {self.parameter1.value} {self.parameter2.value}"
+            # Ensure values are set
+            if self.parameter1.value is None or self.parameter2.value is None:
+                raise ValueError(f"Invalid values: parameter1={self.parameter1.value}, parameter2={self.parameter2.value}")
+
+            # Compute based on operation
+            if self.operation == Operations.PLUS:
+                if isinstance(self.parameter1.value, str) and isinstance(self.parameter2.value, str):
+                    self.value = self.parameter1.value + self.parameter2.value
+                else:
+                    self.value = self.parameter1.value + self.parameter2.value
+            elif self.operation == Operations.MINUS:
+                self.value = self.parameter1.value - self.parameter2.value
+            elif self.operation == Operations.TIMES:
+                self.value = self.parameter1.value * self.parameter2.value
+            elif self.operation == Operations.DIVIDE:
+                self.value = self.parameter1.value / self.parameter2.value
+            elif self.operation == Operations.EQ:
+                self.value = self.parameter1.value == self.parameter2.value
+            elif self.operation == Operations.NEQ:
+                self.value = self.parameter1.value != self.parameter2.value
+            self.signature = f"{self.operation.name} {self.parameter1.value} {self.parameter2.value}"
+        except Exception as e:
+            raise ValueError(f"Error computing {self.operation.name} with {self.parameter1} and {self.parameter2}: {e}")
 
     def __repr__(self) -> str:
         return self.signature
@@ -171,7 +182,7 @@ class FunctionCall(Expression):
 
     def run(self, memory) -> None:
         func = memory.get(self.name)
-        local_memory = Memory()  # This line requires Memory to be imported
+        local_memory = Memory()
         for param, arg in zip(func.params, self.args):
             arg.run(memory)
             local_memory.set(param, arg.value, type(arg.value))
@@ -188,7 +199,7 @@ class PrintStatement(Statement):
 
     def run(self, memory) -> None:
         self.expression.run(memory)
-        print(self.expression.value)
+        print(str(self.expression.value).lower() if isinstance(self.expression.value, bool) else self.expression.value)
 
 class ReturnStatement(Statement):
     def __init__(self, expression: Expression):

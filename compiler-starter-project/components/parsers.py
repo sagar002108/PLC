@@ -96,6 +96,10 @@ class ASTParser(Parser):
     def expr(self, p):
         return ExpressionMath(Operations.NEQ, p.expr0, p.expr1)
 
+    @_('LPAREN expr RPAREN')
+    def expr(self, p):
+        return p.expr
+
     @_('NUMBER')
     def expr(self, p):
         return ExpressionNumber(p.NUMBER)
