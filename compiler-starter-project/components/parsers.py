@@ -127,6 +127,22 @@ class ASTParser(Parser):
     @_('NAME LPAREN args RPAREN')
     def expr(self, p):
         return FunctionCall(p.NAME, p.args)
+        
+    def evaluate_expression(self, expr):
+    if isinstance(expr, tuple):
+        op = expr[0]
+        left = self.evaluate_expression(expr[1])
+        right = self.evaluate_expression(expr[2])
+
+        if op == 'and':
+            return left and right
+        elif op == 'or':
+            return left or right
+        # Handle other operators...
+    else:
+        # Handle literals or variables...
+        return expr
+
 
     @_('expr "," args')
     def args(self, p) -> list:
